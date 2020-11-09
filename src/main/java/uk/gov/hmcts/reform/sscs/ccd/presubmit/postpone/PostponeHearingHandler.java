@@ -12,8 +12,10 @@ import uk.gov.hmcts.reform.sscs.ccd.domain.EventType;
 import uk.gov.hmcts.reform.sscs.ccd.domain.SscsCaseData;
 import uk.gov.hmcts.reform.sscs.ccd.presubmit.PreSubmitCallbackHandler;
 
+
 @Service
 public class PostponeHearingHandler implements PreSubmitCallbackHandler<SscsCaseData> {
+    private PreSubmitCallbackResponse<SscsCaseData> preSubmitCallbackResponse;
 
     @Override
     public boolean canHandle(CallbackType callbackType, Callback<SscsCaseData> callback) {
@@ -31,6 +33,8 @@ public class PostponeHearingHandler implements PreSubmitCallbackHandler<SscsCase
 
         sscsCaseData.setDwpState(DwpState.HEARING_POSTPONED.getId());
 
-        return new PreSubmitCallbackResponse<>(sscsCaseData);
+        preSubmitCallbackResponse = new PreSubmitCallbackResponse<>(sscsCaseData);
+
+        return preSubmitCallbackResponse;
     }
 }

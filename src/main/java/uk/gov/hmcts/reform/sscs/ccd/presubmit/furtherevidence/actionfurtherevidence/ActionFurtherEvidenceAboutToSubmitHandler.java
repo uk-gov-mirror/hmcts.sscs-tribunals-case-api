@@ -56,6 +56,7 @@ public class ActionFurtherEvidenceAboutToSubmitHandler implements PreSubmitCallb
     private static final String COVERSHEET = "coversheet";
     public static final String YES = "Yes";
 
+    private PreSubmitCallbackResponse<SscsCaseData> preSubmitCallbackResponse;
     private final FooterService footerService;
     private final BundleAdditionFilenameBuilder bundleAdditionFilenameBuilder;
 
@@ -86,14 +87,15 @@ public class ActionFurtherEvidenceAboutToSubmitHandler implements PreSubmitCallb
         final CaseDetails<SscsCaseData> caseDetails = callback.getCaseDetails();
         final SscsCaseData sscsCaseData = caseDetails.getCaseData();
 
-        PreSubmitCallbackResponse<SscsCaseData> preSubmitCallbackResponse = new PreSubmitCallbackResponse<>(sscsCaseData);
+        preSubmitCallbackResponse = new PreSubmitCallbackResponse<>(sscsCaseData);
+
 
         if (!callback.isIgnoreWarnings() && YES.equalsIgnoreCase(sscsCaseData.getIsProgressingViaGaps())) {
             preSubmitCallbackResponse.addWarning("This case is progressing via GAPS. Please ensure any documents are emailed to the Regional Processing Centre to be attached to the paper file.");
         }
 
         if (isIssueFurtherEvidenceToAllParties(callback.getCaseDetails().getCaseData().getFurtherEvidenceAction())) {
-            checkAddressesValidToIssueEvidenceToAllParties(sscsCaseData, preSubmitCallbackResponse);
+            checkAddressesValidToIssueEvidenceToAllParties(sscsCaseData);
 
             if (preSubmitCallbackResponse.getErrors().size() > 0) {
                 return preSubmitCallbackResponse;
@@ -102,7 +104,7 @@ public class ActionFurtherEvidenceAboutToSubmitHandler implements PreSubmitCallb
             sscsCaseData.setDwpFurtherEvidenceStates(FURTHER_EVIDENCE_RECEIVED);
         }
 
-        buildSscsDocumentFromScan(sscsCaseData, caseDetails.getState(), callback.isIgnoreWarnings(), preSubmitCallbackResponse);
+        buildSscsDocumentFromScan(sscsCaseData, caseDetails.getState(), callback.isIgnoreWarnings());
 
         return preSubmitCallbackResponse;
     }
@@ -123,7 +125,7 @@ public class ActionFurtherEvidenceAboutToSubmitHandler implements PreSubmitCallb
         return false;
     }
 
-    public void checkAddressesValidToIssueEvidenceToAllParties(SscsCaseData sscsCaseData, PreSubmitCallbackResponse<SscsCaseData> preSubmitCallbackResponse) {
+    public void checkAddressesValidToIssueEvidenceToAllParties(SscsCaseData sscsCaseData) {
         if (isAppellantOrAppointeeAddressInvalid(sscsCaseData)) {
             String party = null != sscsCaseData.getAppeal().getAppellant() && "yes".equalsIgnoreCase(sscsCaseData.getAppeal().getAppellant().getIsAppointee()) ? "Appointee" : "Appellant";
             preSubmitCallbackResponse.addError(buildErrorMessage(party, sscsCaseData.getCcdCaseId()));
@@ -164,13 +166,13 @@ public class ActionFurtherEvidenceAboutToSubmitHandler implements PreSubmitCallb
         return "Address details are missing for the " + party + ", please validate or process manually";
     }
 
-    private void buildSscsDocumentFromScan(SscsCaseData sscsCaseData, State caseState, Boolean ignoreWarnings, PreSubmitCallbackResponse<SscsCaseData> preSubmitCallbackResponse) {
+    private void buildSscsDocumentFromScan(SscsCaseData sscsCaseData, State caseState, Boolean ignoreWarnings) {
 
         if (sscsCaseData.getScannedDocuments() != null) {
             for (ScannedDocument scannedDocument : sscsCaseData.getScannedDocuments()) {
                 if (scannedDocument != null && scannedDocument.getValue() != null) {
 
-                    checkWarningsAndErrors(sscsCaseData, scannedDocument, sscsCaseData.getCcdCaseId(), ignoreWarnings, preSubmitCallbackResponse);
+                    checkWarningsAndErrors(sscsCaseData, scannedDocument, sscsCaseData.getCcdCaseId(), ignoreWarnings);
 
 
                     if (ScannedDocumentType.CONFIDENTIALITY_REQUEST.getValue().equals(scannedDocument.getValue().getType())) {
@@ -240,7 +242,7 @@ public class ActionFurtherEvidenceAboutToSubmitHandler implements PreSubmitCallb
         }
     }
 
-    private void checkWarningsAndErrors(SscsCaseData sscsCaseData, ScannedDocument scannedDocument, String caseId, boolean ignoreWarnings, PreSubmitCallbackResponse<SscsCaseData> preSubmitCallbackResponse) {
+    private void checkWarningsAndErrors(SscsCaseData sscsCaseData, ScannedDocument scannedDocument, String caseId, boolean ignoreWarnings) {
 
         if (scannedDocument.getValue().getUrl() == null) {
             preSubmitCallbackResponse.addError("No document URL so could not process");
