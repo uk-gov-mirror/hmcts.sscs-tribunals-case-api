@@ -25,6 +25,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import junitparams.converters.Nullable;
@@ -830,5 +834,87 @@ public class ActionFurtherEvidenceAboutToSubmitHandlerTest {
             .requestOutcome(requestOutcome).build();
     }
 
+    @Test
+    public void isThreadSafe() throws Exception {
+
+        DynamicList furtherEvidenceActionList =
+                buildFurtherEvidenceActionItemListForGivenOption("otherDocumentManual",
+                        "Other document type - action manually");
+
+        DynamicList originalSender = buildOriginalSenderItemListForGivenOption("appellant",
+                "Appellant (or Appointee)");
+
+        String evidenceHandle = null;
+
+
+        sscsCaseData.setFurtherEvidenceAction(furtherEvidenceActionList);
+        sscsCaseData.setOriginalSender(originalSender);
+        sscsCaseData.setEvidenceHandled(evidenceHandle);
+
+        int numberOfTasks = 3;
+        ExecutorService executor= Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
+        AtomicBoolean noOverwrite = new AtomicBoolean(true);
+
+        try{
+            for ( int i=0; i < numberOfTasks; i++) {
+
+                String expectedId1 = String.valueOf(i);
+
+                SscsCaseData thisCaseData = SscsCaseData.builder()
+                        .ccdCaseId(expectedId1)
+                        .scannedDocuments(scannedDocumentList)
+                        .furtherEvidenceAction(furtherEvidenceActionList)
+                        .originalSender(originalSender)
+                        .appeal(Appeal.builder().appellant(Appellant.builder().address(Address.builder().line1("My Road").postcode("TS1 2BA").build()).build()).build())
+                        .build();
+
+                when(callback.getCaseDetails()).thenReturn(caseDetails);
+                when(caseDetails.getCaseData()).thenReturn(thisCaseData);
+
+                executor.execute(new ThreadRunnable(i, actionFurtherEvidenceAboutToSubmitHandler, callback, expectedId1, noOverwrite));
+            }
+        }catch(Exception err){
+            err.printStackTrace();
+        }
+
+        Thread.sleep(3000);
+        assertTrue(noOverwrite.get());
+        executor.shutdown();
+    }
+
+
+}
+
+class ThreadRunnable implements Runnable {
+
+    int id;
+    ActionFurtherEvidenceAboutToSubmitHandler handler;
+    Callback<SscsCaseData> callback;
+    String expectedCaseId;
+    AtomicBoolean noOverwrite;
+
+    public ThreadRunnable(int i, ActionFurtherEvidenceAboutToSubmitHandler handler, Callback<SscsCaseData> callback,
+                          String expectedCaseId, AtomicBoolean noOverwrite) {
+        this.id = i;
+        this.handler = handler;
+        this.callback = callback;
+        this.expectedCaseId = expectedCaseId;
+        this.noOverwrite = noOverwrite;
+    }
+
+    public void run() {
+            System.out.println("Runnable id: "+ id + " for case id " + callback.getCaseDetails().getCaseData().getCcdCaseId());
+            PreSubmitCallbackResponse<SscsCaseData> response = null;
+            response = handler.handle(ABOUT_TO_SUBMIT, callback, "Bearer token");
+            System.out.println("response case id = " + response.getData().getCcdCaseId());
+
+            if(!response.getData().getCcdCaseId().equals(expectedCaseId)) {
+                System.out.println("Response  case id " + response.getData().getCcdCaseId() + " Doesnt Match expected " + expectedCaseId);
+                noOverwrite.set(false);
+            } else {
+                System.out.println("Does Match");
+            }
+    }
 }
 
