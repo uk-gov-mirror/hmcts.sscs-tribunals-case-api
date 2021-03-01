@@ -1,8 +1,8 @@
 {
   "case_details": {
-    "id": 1573207127632814,
+    "id": 1567775849641360,
     "jurisdiction": "SSCS",
-    "state": "withDwp",
+    "state": "STATE_ID_PLACEHOLDER",
     "version": 3,
     "case_type_id": "Benefit",
     "created_date": [2019, 9, 6, 13, 17, 29, 696000000],
@@ -52,7 +52,7 @@
             "postcode": "TS3 3ST"
           },
           "contact": {
-            "email": "sscstest+notify2@greencroftconsulting.com",
+            "email": "harry.potter@wizards.com",
             "phone": null,
             "mobile": "07411999999"
           },
@@ -107,48 +107,41 @@
       "draftSscsFurtherEvidenceDocument": [
         {
           "value": {
-            "documentType": "appellantEvidence",
+            "documentType": "DOCUMENT_TYPE_PLACEHOLDER",
             "documentLink": {
-              "document_url": "http://dm-store:5005/documents/86b8a478-e798-462c-a584-a91190ef687f",
-              "document_binary_url": "http://dm-store:5005/documents/86b8a478-e798-462c-a584-a91190ef687f/binary",
-              "document_filename": "appellant-some-name.pdf"
-            },
-            "documentFileName": "appellant-some-name.pdf"
-          }
-        },
-        {
-          "value": {
-            "documentType": "representativeEvidence",
-            "documentLink": {
-              "document_url": "http://dm-store:5005/documents/86b8a478-e798-462c-a584-a91190ef687f",
-              "document_binary_url": "http://dm-store:5005/documents/86b8a478-e798-462c-a584-a91190ef687f/binary",
+              "document_url": "http://dm-store:5005/documents/abe3b75a-7a72-4e68-b136-4349b7d4f655",
+              "document_binary_url": "http://dm-store:5005/documents/abe3b75a-7a72-4e68-b136-4349b7d4f655/binary",
               "document_filename": "reps-some-name.pdf"
             },
             "documentFileName": "reps-some-name.pdf"
           }
+        },
+        {
+          "value": {
+            "documentType": "DOCUMENT_TYPE2_PLACEHOLDER",
+            "documentLink": {
+              "document_url": "http://dm-store:5005/documents/abe3b75a-7a72-4e68-b136-4349b7d4f655",
+              "document_binary_url": "http://dm-store:5005/documents/abe3b75a-7a72-4e68-b136-4349b7d4f655/binary",
+              "document_filename": "appellant-some-name.mp3"
+            },
+            "documentFileName": "appellant-some-name.mp3"
+          }
         }
       ],
-      "sscsDocument": [{
-        "value": {
-          "documentType": "appellantEvidence",
-          "documentLink": {
-            "document_url": "http://dm-store:5005/documents/abe3b75a-7a72-4e68-b136-4349b7d4f655",
-            "document_binary_url": "http://dm-store:5005/documents/abe3b75a-7a72-4e68-b136-4349b7d4f655/binary",
-            "document_filename": "some-name1.pdf"
-          },
-          "documentFileName": "some-name1.pdf"
+      "sscsDocument": [
+        {
+          "value": {
+            "documentType": "dl6",
+            "documentFileName": "dl6-1567775849641360.pdf",
+            "documentDateAdded": "2019-09-06",
+            "documentLink": {
+              "document_url": "http://dm-store:5005/documents/abe3b75a-7a72-4e68-b136-4349b7d4f655",
+              "document_binary_url": "http://dm-store:5005/documents/abe3b75a-7a72-4e68-b136-4349b7d4f655/binary",
+              "document_filename": "dl6-1567775849641360.pdf"
+            }
+          }
         }
-      }, {
-        "value": {
-          "documentType": "representativeEvidence",
-          "documentLink": {
-            "document_url": "http://dm-store:5005/documents/abe3b75a-7a72-4e68-b136-4349b7d4f655",
-            "document_binary_url": "http://dm-store:5005/documents/abe3b75a-7a72-4e68-b136-4349b7d4f655/binary",
-            "document_filename": "some-name2.pdf"
-          },
-          "documentFileName": "some-name2.pdf"
-        }
-      }],
+      ],
       "dateSentToDwp": "2019-09-06",
       "dwpTimeExtension": [],
       "hearings": [{
@@ -836,7 +829,7 @@
             "postcode": "TS3 3ST"
           },
           "contact": {
-            "email": "sscstest+notify2@greencroftconsulting.com",
+            "email": "harry.potter@wizards.com",
             "phone": null,
             "mobile": "07411999999"
           },
@@ -1557,6 +1550,6 @@
       "generatedMobile": "PUBLIC"
     }
   },
-  "event_id": "uploadDocumentFurtherEvidence",
+  "event_id": "EVENT_ID_PLACEHOLDER",
   "ignore_warning": false
 }

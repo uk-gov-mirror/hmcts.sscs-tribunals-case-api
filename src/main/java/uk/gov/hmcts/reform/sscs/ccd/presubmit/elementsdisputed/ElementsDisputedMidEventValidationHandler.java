@@ -59,7 +59,10 @@ public class ElementsDisputedMidEventValidationHandler implements PreSubmitCallb
             preSubmitCallbackResponse.addError(violation.getMessage());
         }
 
-        checkAt38DocIsPresent(sscsCaseData);
+        if (callback.getEvent() == EventType.HMCTS_RESPONSE_REVIEWED
+                || callback.getEvent() == EventType.DWP_UPLOAD_RESPONSE) {
+            checkAt38DocIsPresent(sscsCaseData);
+        }
 
         checkForDuplicateIssueCodes(sscsCaseData);
 

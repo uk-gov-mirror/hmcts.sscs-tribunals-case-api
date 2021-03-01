@@ -10,6 +10,7 @@ import java.util.List;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -163,7 +164,7 @@ public class CaseUpdatedAboutToSubmitHandlerTest {
         assertEquals("Yes", matchingCase2.getData().getLinkedCasesBoolean());
         assertEquals("ccdId", matchingCase2.getData().getAssociatedCase().get(0).getValue().getCaseReference());
     }
-  
+
     @Test
     @Parameters({"Birmingham,Glasgow,Yes", "Glasgow,Birmingham,No"})
     public void givenChangeInRpcChangeIsScottish(String oldRpcName, String newRpcName, String expected) {
@@ -237,5 +238,107 @@ public class CaseUpdatedAboutToSubmitHandlerTest {
         PreSubmitCallbackResponse<SscsCaseData> response = handler.handle(ABOUT_TO_SUBMIT, callback, USER_AUTHORISATION);
 
         assertEquals("VenueB", response.getData().getProcessingVenue());
+    }
+
+    @Ignore("commented out as case loader is failing on this validation checks, we need to do another data exercise to clean the data")
+    @Test
+    @Parameters({"!. House, House, House, House",
+            "~., 101 House, House, House",
+            " Ho.use, ., \"101 House, House",
+            " ., ãHouse, âHouse, &101 House"})
+    public void givenACaseUpdateEventWithInvalidAppellantAddressDetails_thenReturnError(String line1, String line2, String town, String county) {
+        Address appellantAddress = callback.getCaseDetails().getCaseData().getAppeal().getAppellant().getAddress();
+        appellantAddress.setLine1(line1);
+        appellantAddress.setLine2(line2);
+        appellantAddress.setCounty(county);
+        appellantAddress.setTown(town);
+
+        PreSubmitCallbackResponse<SscsCaseData> response = handler.handle(ABOUT_TO_SUBMIT, callback, USER_AUTHORISATION);
+        long numberOfExpectedError = getNumberOfExpectedError(response);
+        assertEquals(1, numberOfExpectedError);
+    }
+
+    @Ignore("commented out as case loader is failing on this validation checks, we need to do another data exercise to clean the data")
+    @Test
+    @Parameters({"!. House, House, House, House",
+            "~., 101 House, House, House",
+            " Ho.use, ., \"101 House, House",
+            " ., ãHouse, âHouse, &101 House"})
+    public void givenACaseUpdateEventWithInvalidRepresentativeAddressDetails_thenReturnError(String line1, String line2, String town, String county) {
+        Representative representative = Representative.builder().address(buildAddress(line1, line2, county, town)).build();
+        callback.getCaseDetails().getCaseData().getAppeal().setRep(representative);
+
+        PreSubmitCallbackResponse<SscsCaseData> response = handler.handle(ABOUT_TO_SUBMIT, callback, USER_AUTHORISATION);
+        long numberOfExpectedError = getNumberOfExpectedError(response);
+        assertEquals(1, numberOfExpectedError);
+    }
+
+    @Ignore("commented out as case loader is failing on this validation checks, we need to do another data exercise to clean the data")
+    @Test
+    @Parameters({"!. House, House, House, House",
+            "~., 101 House, House, House",
+            " Ho.use, ., \"101 House, House",
+            " ., ãHouse, âHouse, &101 House"})
+    public void givenACaseUpdateEventWithInvalidAppointeeAddressDetails_thenReturnError(String line1, String line2, String town, String county) {
+        Appointee appointee = Appointee.builder().address(buildAddress(line1, line2, county, town)).build();
+        callback.getCaseDetails().getCaseData().getAppeal().getAppellant().setAppointee(appointee);
+
+        PreSubmitCallbackResponse<SscsCaseData> response = handler.handle(ABOUT_TO_SUBMIT, callback, USER_AUTHORISATION);
+        long numberOfExpectedError = getNumberOfExpectedError(response);
+        assertEquals(1, numberOfExpectedError);
+    }
+
+    @Ignore("commented out as case loader is failing on this validation checks, we need to do another data exercise to clean the data")
+    @Test
+    @Parameters({"!. House, House, House, House",
+            "~., 101 House, House, House",
+            " Ho.use, ., \"101 House, House",
+            " ., ãHouse, âHouse, &101 House"})
+    public void givenACaseUpdateEventWithInvalidJointPartyAddressDetails_thenReturnError(String line1, String line2, String town, String county) {
+        callback.getCaseDetails().getCaseData().setJointPartyAddress(buildAddress(line1, line2, county, town));
+
+        PreSubmitCallbackResponse<SscsCaseData> response = handler.handle(ABOUT_TO_SUBMIT, callback, USER_AUTHORISATION);
+        long numberOfExpectedError = getNumberOfExpectedError(response);
+        assertEquals(1, numberOfExpectedError);
+    }
+
+    @Test
+    @Parameters({"  ,   ,   ,   ",
+             "Ts. Test's Ltd, Ts. Test's Ltd, Ts. Test's Ltd, Ts. Test's Ltd",
+            "A“”\"’'?![]()/£:_+-%&, A“”\"’'?![]()/£:_+-%&, A“”\"’'?![]()/£:_+-%&, A“”\"’'?![]()/£:_+-%&",
+            "\\,Test Street,\\,Test Street,\\,Test Street,\\,Test Street",
+            ".dot Street,.dot Street,.dot Street,.dot Street"})
+    public void givenACaseUpdateEventWithAddressDetails_thenShouldNotReturnError(String line1, String line2, String town, String county) {
+        Address address = buildAddress(line1, line2, county, town);
+        callback.getCaseDetails().getCaseData().getAppeal().getAppellant().setAddress(address);
+        PreSubmitCallbackResponse<SscsCaseData> response = handler.handle(ABOUT_TO_SUBMIT, callback, USER_AUTHORISATION);
+        long numberOfExpectedError = getNumberOfExpectedError(response);
+        assertEquals(0, numberOfExpectedError);
+
+        Representative representative = Representative.builder().address(address).build();
+        callback.getCaseDetails().getCaseData().getAppeal().toBuilder().rep(representative).build();
+        response = handler.handle(ABOUT_TO_SUBMIT, callback, USER_AUTHORISATION);
+        numberOfExpectedError = getNumberOfExpectedError(response);
+        assertEquals(0, numberOfExpectedError);
+
+        callback.getCaseDetails().getCaseData().getAppeal().getAppellant().toBuilder().appointee(Appointee.builder().address(address).build()).build();
+        response = handler.handle(ABOUT_TO_SUBMIT, callback, USER_AUTHORISATION);
+        numberOfExpectedError = getNumberOfExpectedError(response);
+        assertEquals(0, numberOfExpectedError);
+
+        callback.getCaseDetails().getCaseData().setJointPartyAddress(address);
+        response = handler.handle(ABOUT_TO_SUBMIT, callback, USER_AUTHORISATION);
+        numberOfExpectedError = getNumberOfExpectedError(response);
+        assertEquals(0, numberOfExpectedError);
+    }
+
+    private long getNumberOfExpectedError(PreSubmitCallbackResponse<SscsCaseData> response) {
+        return response.getErrors().stream()
+                .filter(error -> error.equalsIgnoreCase("Invalid characters are being used at the beginning of address fields, please correct"))
+                .count();
+    }
+
+    private Address buildAddress(String line1, String line2, String county, String town) {
+        return Address.builder().line1(line1).line2(line2).county(county).town(town).build();
     }
 }

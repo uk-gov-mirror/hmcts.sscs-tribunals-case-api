@@ -8,6 +8,7 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.junit.Test;
+import uk.gov.hmcts.reform.sscs.ccd.domain.AudioVideoEvidence;
 import uk.gov.hmcts.reform.sscs.ccd.domain.ScannedDocument;
 import uk.gov.hmcts.reform.sscs.ccd.domain.SscsCaseDetails;
 
@@ -39,6 +40,37 @@ public class EvidenceUploadTest extends BaseFunctionTest {
         assertThat(scannedDocument.size(), is(1));
         String expectedEvidenceUploadFilename = String.format("Appellant upload 1 - %s.pdf", caseDetails.getId());
         assertThat(scannedDocument.get(0).getValue().getFileName(), is(expectedEvidenceUploadFilename));
+    }
+
+    @Test
+    public void uploadAudioThenSubmitEvidenceToAppeal() throws IOException, JSONException, InterruptedException {
+        CreatedCcdCase createdCcdCase = createCase();
+
+        Thread.sleep(5000L);
+
+        JSONArray draftHearingEvidence = sscsMyaBackendRequests.getDraftHearingEvidence(createdCcdCase.getCaseId());
+        assertThat(draftHearingEvidence.length(), is(0));
+
+        sscsMyaBackendRequests.uploadHearingEvidence(createdCcdCase.getCaseId(), "evidence.mp3");
+        
+        draftHearingEvidence = sscsMyaBackendRequests.getDraftHearingEvidence(createdCcdCase.getCaseId());
+        assertThat(draftHearingEvidence.length(), is(1));
+        assertThat(draftHearingEvidence.getJSONObject(0).getString("file_name"), is("evidence.mp3"));
+
+        sscsMyaBackendRequests.submitHearingEvidence(createdCcdCase.getCaseId(), "some description");
+
+        draftHearingEvidence = sscsMyaBackendRequests.getDraftHearingEvidence(createdCcdCase.getCaseId());
+        assertThat(draftHearingEvidence.length(), is(0));
+
+        SscsCaseDetails caseDetails = getCaseDetails(createdCcdCase.getCaseId());
+
+        List<ScannedDocument> scannedDocument = caseDetails.getData().getScannedDocuments();
+        assertThat(scannedDocument.size(), is(1));
+        List<AudioVideoEvidence> audioVideoEvidences = caseDetails.getData().getAudioVideoEvidence();
+        assertThat(audioVideoEvidences.size(), is(1));
+        String expectedEvidenceUploadFilename = String.format("Appellant upload 1 - %s.pdf", caseDetails.getId());
+        assertThat(scannedDocument.get(0).getValue().getFileName(), is(expectedEvidenceUploadFilename));
+        assertThat(audioVideoEvidences.get(0).getValue().getFileName(), is("evidence.mp3"));
     }
 
     @Test
