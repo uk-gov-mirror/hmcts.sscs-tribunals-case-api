@@ -33,12 +33,14 @@ import uk.gov.hmcts.reform.sscs.ccd.callback.Callback;
 import uk.gov.hmcts.reform.sscs.ccd.callback.CallbackType;
 import uk.gov.hmcts.reform.sscs.ccd.callback.PreSubmitCallbackResponse;
 import uk.gov.hmcts.reform.sscs.ccd.domain.*;
+import uk.gov.hmcts.reform.sscs.ccd.presubmit.InterlocReferralReason;
 import uk.gov.hmcts.reform.sscs.ccd.presubmit.InterlocReviewState;
 import uk.gov.hmcts.reform.sscs.ccd.presubmit.processaudiovideo.ProcessAudioVideoActionDynamicListItems;
 import uk.gov.hmcts.reform.sscs.ccd.presubmit.processaudiovideo.ProcessAudioVideoEvidenceAboutToSubmitHandler;
 import uk.gov.hmcts.reform.sscs.config.DocumentConfiguration;
 import uk.gov.hmcts.reform.sscs.model.docassembly.GenerateFileParams;
 import uk.gov.hmcts.reform.sscs.service.FooterService;
+import uk.gov.hmcts.reform.sscs.service.UserDetailsService;
 
 @RunWith(JUnitParamsRunner.class)
 public class ProcessAudioVideoEvidenceAboutToSubmitHandlerTest {
@@ -64,6 +66,9 @@ public class ProcessAudioVideoEvidenceAboutToSubmitHandlerTest {
     @Mock
     private FooterService footerService;
 
+    @Mock
+    private UserDetailsService userDetailsService;
+
     private SscsDocument expectedDocument;
 
     @Before
@@ -77,13 +82,14 @@ public class ProcessAudioVideoEvidenceAboutToSubmitHandlerTest {
         documents.put(LanguagePreference.ENGLISH, englishEventTypeDocs);
 
         documentConfiguration.setDocuments(documents);
-        handler = new ProcessAudioVideoEvidenceAboutToSubmitHandler(footerService);
+        handler = new ProcessAudioVideoEvidenceAboutToSubmitHandler(footerService, userDetailsService);
 
         sscsCaseData = SscsCaseData.builder()
                 .signedBy("User")
                 .processAudioVideoAction(new DynamicList(ISSUE_DIRECTIONS_NOTICE.getCode()))
                 .signedRole("Judge")
                 .dateAdded(LocalDate.now().minusDays(1))
+                .directionDueDate(LocalDate.now().plusDays(1).toString())
                 .regionalProcessingCenter(RegionalProcessingCenter.builder().name("Birmingham").build())
                 .previewDocument(DocumentLink.builder()
                         .documentUrl(DOCUMENT_URL)
@@ -133,6 +139,7 @@ public class ProcessAudioVideoEvidenceAboutToSubmitHandlerTest {
         when(callback.getCaseDetails()).thenReturn(caseDetails);
         when(callback.getEvent()).thenReturn(EventType.PROCESS_AUDIO_VIDEO);
         when(caseDetails.getCaseData()).thenReturn(sscsCaseData);
+        when(userDetailsService.buildLoggedInUserName(USER_AUTHORISATION)).thenReturn("John Lewis");
     }
 
     @Test
@@ -185,6 +192,7 @@ public class ProcessAudioVideoEvidenceAboutToSubmitHandlerTest {
 
         verify(footerService).createFooterAndAddDocToCase(eq(expectedDocument.getValue().getDocumentLink()), any(), eq(AUDIO_VIDEO_EVIDENCE_DIRECTION_NOTICE), any(), any(), eq(null), eq(null));
         assertNull(response.getData().getInterlocReviewState());
+        assertEquals(InterlocReferralReason.NONE.getId(), response.getData().getInterlocReferralReason());
         assertThat(response.getData().getDwpState(), is(DIRECTION_ACTION_REQUIRED.getId()));
         assertEquals(1, response.getData().getAudioVideoEvidence().size());
         assertEquals(1, response.getData().getSscsDocument().size());
@@ -282,6 +290,7 @@ public class ProcessAudioVideoEvidenceAboutToSubmitHandlerTest {
 
         verify(footerService).createFooterAndAddDocToCase(eq(expectedDocument.getValue().getDocumentLink()), any(), eq(AUDIO_VIDEO_EVIDENCE_DIRECTION_NOTICE), any(), any(), eq(null), eq(null));
         assertNull(response.getData().getInterlocReviewState());
+        assertEquals(InterlocReferralReason.NONE.getId(), response.getData().getInterlocReferralReason());
         assertThat(response.getData().getDwpState(), is(DIRECTION_ACTION_REQUIRED.getId()));
         assertNull(response.getData().getAudioVideoEvidence());
         assertEquals(1, response.getData().getDwpDocuments().size());
@@ -321,6 +330,7 @@ public class ProcessAudioVideoEvidenceAboutToSubmitHandlerTest {
 
         verify(footerService).createFooterAndAddDocToCase(eq(expectedDocument.getValue().getDocumentLink()), any(), eq(AUDIO_VIDEO_EVIDENCE_DIRECTION_NOTICE), any(), any(), eq(null), eq(null));
         assertNull(response.getData().getInterlocReviewState());
+        assertEquals(InterlocReferralReason.NONE.getId(), response.getData().getInterlocReferralReason());
         assertThat(response.getData().getDwpState(), is(DIRECTION_ACTION_REQUIRED.getId()));
         assertNull(response.getData().getAudioVideoEvidence());
         assertEquals(1, response.getData().getDwpDocuments().size());
@@ -370,6 +380,7 @@ public class ProcessAudioVideoEvidenceAboutToSubmitHandlerTest {
 
         verify(footerService).createFooterAndAddDocToCase(eq(expectedDocument.getValue().getDocumentLink()), any(), eq(AUDIO_VIDEO_EVIDENCE_DIRECTION_NOTICE), any(), any(), eq(null), eq(null));
         assertNull(response.getData().getInterlocReviewState());
+        assertEquals(InterlocReferralReason.NONE.getId(), response.getData().getInterlocReferralReason());
         assertThat(response.getData().getDwpState(), is(DIRECTION_ACTION_REQUIRED.getId()));
         assertNull(response.getData().getAudioVideoEvidence());
         assertEquals(2, response.getData().getDwpDocuments().size());
@@ -395,6 +406,7 @@ public class ProcessAudioVideoEvidenceAboutToSubmitHandlerTest {
 
         verify(footerService).createFooterAndAddDocToCase(eq(expectedDocument.getValue().getDocumentLink()), any(), eq(AUDIO_VIDEO_EVIDENCE_DIRECTION_NOTICE), any(), any(), eq(null), eq(null));
         assertNull(response.getData().getInterlocReviewState());
+        assertEquals(InterlocReferralReason.NONE.getId(), response.getData().getInterlocReferralReason());
         assertThat(response.getData().getDwpState(), is(DIRECTION_ACTION_REQUIRED.getId()));
         assertEquals(1, response.getData().getAudioVideoEvidence().size());
     }
@@ -414,6 +426,7 @@ public class ProcessAudioVideoEvidenceAboutToSubmitHandlerTest {
 
         verify(footerService).createFooterAndAddDocToCase(eq(expectedDocument.getValue().getDocumentLink()), any(), eq(AUDIO_VIDEO_EVIDENCE_DIRECTION_NOTICE), any(), any(), eq(null), eq(null));
         assertNull(response.getData().getInterlocReviewState());
+        assertEquals(InterlocReferralReason.NONE.getId(), response.getData().getInterlocReferralReason());
         assertThat(response.getData().getDwpState(), is(DIRECTION_ACTION_REQUIRED.getId()));
         assertNull(response.getData().getAudioVideoEvidence());
     }
@@ -428,6 +441,7 @@ public class ProcessAudioVideoEvidenceAboutToSubmitHandlerTest {
         assertThat(response.getErrors().size(), is(0));
         assertThat(response.getWarnings().size(), is(0));
         assertThat(response.getData().getInterlocReviewState(), is(InterlocReviewState.REVIEW_BY_JUDGE.getId()));
+        assertEquals(InterlocReferralReason.REVIEW_AUDIO_VIDEO_EVIDENCE.getId(), response.getData().getInterlocReferralReason());
         assertThat(response.getData().getInterlocReferralDate(), is(LocalDate.now().toString()));
     }
 
@@ -444,6 +458,7 @@ public class ProcessAudioVideoEvidenceAboutToSubmitHandlerTest {
         assertThat(response.getWarnings().size(), is(0));
         assertThat(response.getData().getWelshInterlocNextReviewState(), is(InterlocReviewState.AWAITING_INFORMATION.getId()));
         assertThat(response.getData().getInterlocReviewState(), is(InterlocReviewState.WELSH_TRANSLATION.getId()));
+        assertEquals(InterlocReferralReason.REVIEW_AUDIO_VIDEO_EVIDENCE.getId(), response.getData().getInterlocReferralReason());
         assertThat(response.getData().getInterlocReferralDate(), is(LocalDate.now().toString()));
     }
 
@@ -459,6 +474,7 @@ public class ProcessAudioVideoEvidenceAboutToSubmitHandlerTest {
         assertThat(response.getWarnings().size(), is(0));
         assertThat(response.getData().getWelshInterlocNextReviewState(), is(InterlocReviewState.REVIEW_BY_JUDGE.getId()));
         assertThat(response.getData().getInterlocReviewState(), is(InterlocReviewState.WELSH_TRANSLATION.getId()));
+        assertEquals(InterlocReferralReason.REVIEW_AUDIO_VIDEO_EVIDENCE.getId(), response.getData().getInterlocReferralReason());
         assertThat(response.getData().getInterlocReferralDate(), is(LocalDate.now().toString()));
     }
 
@@ -468,6 +484,7 @@ public class ProcessAudioVideoEvidenceAboutToSubmitHandlerTest {
         final PreSubmitCallbackResponse<SscsCaseData> response = handler.handle(ABOUT_TO_SUBMIT, callback, USER_AUTHORISATION);
 
         assertThat(response.getData().getInterlocReviewState(), is(InterlocReviewState.AWAITING_ADMIN_ACTION.getId()));
+        assertEquals(InterlocReferralReason.REVIEW_AUDIO_VIDEO_EVIDENCE.getId(), response.getData().getInterlocReferralReason());
     }
 
     @Test
@@ -479,6 +496,7 @@ public class ProcessAudioVideoEvidenceAboutToSubmitHandlerTest {
 
         assertThat(response.getData().getWelshInterlocNextReviewState(), is(InterlocReviewState.AWAITING_ADMIN_ACTION.getId()));
         assertThat(response.getData().getInterlocReviewState(), is(InterlocReviewState.WELSH_TRANSLATION.getId()));
+        assertEquals(InterlocReferralReason.REVIEW_AUDIO_VIDEO_EVIDENCE.getId(), response.getData().getInterlocReferralReason());
     }
 
     @Test
@@ -488,6 +506,7 @@ public class ProcessAudioVideoEvidenceAboutToSubmitHandlerTest {
     public void shouldAddNote_whenActionIsSelected(ProcessAudioVideoActionDynamicListItems action) {
         sscsCaseData.setProcessAudioVideoAction(new DynamicList(action.getCode()));
         final String note = "This is a note";
+        final String userName = "John Lewis";
         sscsCaseData.setTempNoteDetail(note);
 
         final PreSubmitCallbackResponse<SscsCaseData> response = handler.handle(ABOUT_TO_SUBMIT, callback, USER_AUTHORISATION);
@@ -497,7 +516,18 @@ public class ProcessAudioVideoEvidenceAboutToSubmitHandlerTest {
         assertThat(response.getWarnings().size(), is(0));
         assertNull(response.getData().getTempNoteDetail());
         assertThat(response.getData().getAppealNotePad().getNotesCollection().size(), is(1));
-        assertThat(response.getData().getAppealNotePad().getNotesCollection().get(0), is(Note.builder().value(NoteDetails.builder().noteDate(LocalDate.now().toString()).noteDetail(note).build()).build()));
+        assertThat(response.getData().getAppealNotePad().getNotesCollection().get(0), is(Note.builder().value(NoteDetails.builder().noteDate(LocalDate.now().toString()).noteDetail(note).author(userName).build()).build()));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void shouldAddNoteAndNoUserDetails_thenThrowsException() {
+        when(userDetailsService.buildLoggedInUserName(USER_AUTHORISATION)).thenThrow(new IllegalStateException("Unable to obtain signed in user details"));
+
+        sscsCaseData.setProcessAudioVideoAction(new DynamicList(SEND_TO_ADMIN.getCode()));
+        final String note = "This is a note";
+        sscsCaseData.setTempNoteDetail(note);
+
+        final PreSubmitCallbackResponse<SscsCaseData> response = handler.handle(ABOUT_TO_SUBMIT, callback, USER_AUTHORISATION);
     }
 
     @Test
@@ -529,6 +559,7 @@ public class ProcessAudioVideoEvidenceAboutToSubmitHandlerTest {
 
         verify(footerService).createFooterAndAddDocToCase(eq(expectedDocument.getValue().getDocumentLink()), any(), eq(AUDIO_VIDEO_EVIDENCE_DIRECTION_NOTICE), any(), any(), eq(null), eq(SscsDocumentTranslationStatus.TRANSLATION_REQUIRED));
         assertThat(response.getData().getInterlocReviewState(), is(InterlocReviewState.WELSH_TRANSLATION.getId()));
+        assertEquals(InterlocReferralReason.NONE.getId(), response.getData().getInterlocReferralReason());
         assertThat(response.getData().getDwpState(), is(DwpState.DIRECTION_ACTION_REQUIRED.getId()));
         assertNull(response.getData().getAudioVideoEvidence());
         assertEquals(1, response.getData().getDwpDocuments().size());
@@ -577,5 +608,4 @@ public class ProcessAudioVideoEvidenceAboutToSubmitHandlerTest {
             assertThat(response.getData().getInterlocReviewState(), is(finalState.getId()));
         }
     }
-
 }
