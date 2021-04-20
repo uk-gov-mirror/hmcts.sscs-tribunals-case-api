@@ -23,7 +23,7 @@ import uk.gov.hmcts.reform.sscs.functional.handlers.BaseHandler;
 @RunWith(JUnitParamsRunner.class)
 @TestPropertySource(locations = "classpath:config/application_e2e.properties")
 @SpringBootTest
-public class ProcessAudioVideoEvidenceAboutToStartHandlerTest extends BaseHandler {
+public class ProcessAudioVideoEvidenceAboutToStartHandlerFunctionalTest extends BaseHandler {
 
     @ClassRule
     public static final SpringClassRule SPRING_CLASS_RULE = new SpringClassRule();
@@ -48,10 +48,6 @@ public class ProcessAudioVideoEvidenceAboutToStartHandlerTest extends BaseHandle
                 .log().all(true)
                 .assertThat().body("data.selectedAudioVideoEvidence.value.label", equalTo("file.mp3"))
                 .assertThat().body("data.selectedAudioVideoEvidence.list_items", hasItem(hasEntry("code", "url")))
-                .assertThat().body("data.selectedAudioVideoEvidence.list_items", hasSize(1))
-                .assertThat().body("data.processAudioVideoAction.value.code", equalTo("issueDirectionsNotice"))
-                .assertThat().body("data.processAudioVideoAction.list_items", hasItem(hasEntry("code", "sendToJudge")))
-                .assertThat().body("data.processAudioVideoAction.list_items", hasItem(hasEntry("code", "issueDirectionsNotice")))
-                .assertThat().body("data.processAudioVideoAction.list_items", hasSize(2));
+                .assertThat().body("data.selectedAudioVideoEvidence.list_items", hasSize(1));
     }
 }
