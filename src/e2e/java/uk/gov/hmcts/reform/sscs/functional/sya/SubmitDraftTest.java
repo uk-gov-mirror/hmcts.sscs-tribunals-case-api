@@ -2,15 +2,14 @@ package uk.gov.hmcts.reform.sscs.functional.sya;
 
 import static io.restassured.RestAssured.baseURI;
 import static io.restassured.RestAssured.useRelaxedHTTPSValidation;
+import static net.javacrumbs.jsonunit.JsonAssert.assertJsonEquals;
+import static net.javacrumbs.jsonunit.JsonAssert.whenIgnoringPaths;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static uk.gov.hmcts.reform.sscs.functional.sya.SubmitAppealTest.getCcdIdFromLocationHeader;
-import static uk.gov.hmcts.reform.sscs.transform.deserialize.SubmitYourAppealToCcdCaseDataDeserializer.convertSyaToCcdCaseData;
-import static uk.gov.hmcts.reform.sscs.util.SyaJsonMessageSerializer.ALL_DETAILS_DWP_REGIONAL_CENTRE;
-import static uk.gov.hmcts.reform.sscs.util.SyaJsonMessageSerializer.ALL_DETAILS_FROM_DRAFT;
-import static uk.gov.hmcts.reform.sscs.util.SyaServiceHelper.getRegionalProcessingCenter;
+import static uk.gov.hmcts.reform.sscs.util.SyaJsonMessageSerializer.*;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -32,14 +31,15 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import uk.gov.hmcts.reform.authorisation.generators.AuthTokenGenerator;
 import uk.gov.hmcts.reform.idam.client.IdamClient;
-import uk.gov.hmcts.reform.sscs.ccd.domain.Appeal;
-import uk.gov.hmcts.reform.sscs.ccd.domain.RegionalProcessingCenter;
 import uk.gov.hmcts.reform.sscs.ccd.domain.SscsCaseData;
 import uk.gov.hmcts.reform.sscs.ccd.domain.SscsCaseDetails;
 import uk.gov.hmcts.reform.sscs.config.CitizenCcdService;
 import uk.gov.hmcts.reform.sscs.domain.wrapper.SyaBenefitType;
 import uk.gov.hmcts.reform.sscs.domain.wrapper.SyaCaseWrapper;
-import uk.gov.hmcts.reform.sscs.idam.*;
+import uk.gov.hmcts.reform.sscs.idam.IdamService;
+import uk.gov.hmcts.reform.sscs.idam.IdamTokens;
+import uk.gov.hmcts.reform.sscs.idam.UserDetails;
+import uk.gov.hmcts.reform.sscs.idam.UserDetailsTransformer;
 import uk.gov.hmcts.reform.sscs.util.SyaServiceHelper;
 
 @RunWith(SpringRunner.class)
@@ -148,20 +148,20 @@ public class SubmitDraftTest {
 
     @Test
     public void givenValidDraftAppealIsSubmittedFromSaveAndReturn_thenCreateValidAppeal() throws InterruptedException {
-        assertDraftCaseToSscsCaseResults("validAppeal");
+        assertDraftCaseToSscsCaseResults("validAppeal", ALL_DETAILS_FROM_DRAFT_CCD.getSerializedMessage());
     }
 
     @Test
     public void givenIncompleteDraftAppealIsSubmittedFromSaveAndReturn_thenCreateIncompleteAppeal() throws InterruptedException {
-        assertDraftCaseToSscsCaseResults("incompleteApplication");
+        assertDraftCaseToSscsCaseResults("incompleteApplication", ALL_DETAILS_FROM_DRAFT_NO_MRN_DATE_CCD.getSerializedMessage());
     }
 
     @Test
     public void givenNonCompliantDraftAppealIsSubmittedFromSaveAndReturn_thenCreateNonCompliantAppeal() throws InterruptedException {
-        assertDraftCaseToSscsCaseResults("interlocutoryReviewState");
+        assertDraftCaseToSscsCaseResults("interlocutoryReviewState", ALL_DETAILS_FROM_DRAFT_WITH_INTERLOC_CCD.getSerializedMessage());
     }
 
-    private void assertDraftCaseToSscsCaseResults(String expectedState) throws InterruptedException {
+    private void assertDraftCaseToSscsCaseResults(String expectedState, String expectedResponse) throws InterruptedException {
         LocalDate now = LocalDate.now();
         LocalDate interlocutoryReviewDate = now.minusMonths(13).minusDays(1);
         LocalDate mrnDate = expectedState.equals("interlocutoryReviewState") ? interlocutoryReviewDate :
@@ -181,11 +181,8 @@ public class SubmitDraftTest {
         wrapper.setCcdCaseId(draft.getCcdCaseId());
         wrapper.getMrn().setDate(mrnDate);
         wrapper.getAppellant().setNino(nino);
-        RegionalProcessingCenter rpc = getRegionalProcessingCenter();
 
-        Appeal expected = convertSyaToCcdCaseData(wrapper, rpc.getName(), rpc).getAppeal();
-
-        String body = ALL_DETAILS_FROM_DRAFT.getSerializedMessage().replaceAll("CCD_CASE_ID", draft.getCcdCaseId());
+        String body = setDraftCaseJson(mrnDate, nino).replaceAll("CCD_CASE_ID", draft.getCcdCaseId());
 
         Response response = RestAssured.given()
                 .body(body)
@@ -195,15 +192,26 @@ public class SubmitDraftTest {
         response.then().statusCode(HttpStatus.SC_CREATED);
 
         final Long id = getCcdIdFromLocationHeader(response.getHeader("Location"));
+
         SscsCaseDetails sscsCaseDetails = submitHelper.findCaseInCcd(id, userIdamTokens);
 
-        if (expected.getAppellant().getAppointee() == null) {
-            sscsCaseDetails.getData().getAppeal().getAppellant().setAppointee(null);
+        log.info(String.format("SYA created with CCD ID %s", id));
+
+        assertJsonEquals(changeExpectedFields(expectedResponse, nino, mrnDate), sscsCaseDetails.getData(), whenIgnoringPaths("sscsDocument"));
+
+        assertEquals(expectedState, sscsCaseDetails.getState());
+    }
+
+    private String changeExpectedFields(String serializedMessage, String nino, LocalDate mrnDate) {
+        serializedMessage = serializedMessage.replace("ZRPVJDDBS", nino);
+        serializedMessage = serializedMessage.replace("2021-04-13", LocalDate.now().toString());
+
+        if (mrnDate != null) {
+            serializedMessage = serializedMessage.replace("2018-02-01", mrnDate.toString());
         }
 
-        log.info(String.format("SYA created with CCD ID %s", id));
-        assertEquals(expected, sscsCaseDetails.getData().getAppeal());
-        assertEquals(expectedState, sscsCaseDetails.getState());
+
+        return serializedMessage;
     }
 
     @Test
