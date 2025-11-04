@@ -112,7 +112,7 @@ def setDemoEnvVars() {
     env.CORE_CASE_DATA_API_URL = "http://ccd-data-store-api-demo.service.core-compute-demo.internal"
     env.CCD_GW_API = "https://gateway-ccd.demo.platform.hmcts.net"
     env.CASE_DOCUMENT_AM_URL = "http://ccd-case-document-am-api-demo.service.core-compute-demo.internal"
-    env.TEST_DOCUMENT_MANAGEMENT_URL = 'http://dm-store-demo.service.core-compute-demo.internal',
+    env.TEST_DOCUMENT_MANAGEMENT_URL = 'http://dm-store-demo.service.core-compute-demo.internal'
     env.DOCUMENT_MANAGEMENT_URL = 'http://dm-store-demo.service.core-compute-demo.internal'
     env.ENVIRONMENT = "demo"
     env.HEARINGS_ENABLED = "Yes"
